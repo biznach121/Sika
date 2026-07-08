@@ -1,0 +1,111 @@
+import { getServerClient, tags, type Product } from "@/lib/sdk-server";
+import { brand } from "@/lib/brand";
+import { getSiteUrl } from "@/lib/site-url";
+
+export const revalidate = 3600;
+
+async function buildLlmsTxt(SITE_URL: string): Promise<string> {
+  const client = getServerClient();
+  const [productsRes, categoriesRes, collectionsRes] = await Promise.all([
+    client.catalogue.getProducts(
+      { limit: 500 },
+      { cacheOptions: { revalidate: 3600, tags: [tags.products()] } },
+    ),
+    client.catalogue.getCategories({
+      cacheOptions: { revalidate: 3600, tags: [tags.categories()] },
+    }),
+    client.catalogue.getCollections({
+      cacheOptions: { revalidate: 3600, tags: [tags.collections()] },
+    }),
+  ]);
+
+  const products: Product[] = productsRes.ok ? productsRes.value.items : [];
+  const categories = categoriesRes.ok ? categoriesRes.value : [];
+  const collections = collectionsRes.ok ? collectionsRes.value : [];
+
+  const lines: string[] = [];
+  lines.push(`# ${brand.name}`);
+  lines.push("");
+  lines.push(`> ${brand.llms.summary}`);
+  lines.push("");
+  lines.push("## Browse");
+  lines.push(`- [Home](${SITE_URL}/)`);
+  lines.push(`- [Shop](${SITE_URL}/shop): Full menu with filter and sort.`);
+  lines.push(`- [Products](${SITE_URL}/products): Product-only live catalogue.`);
+  lines.push(`- [Services](${SITE_URL}/services): Service-only booking page.`);
+
+  if (categories.length > 0) {
+    lines.push("");
+    lines.push("## Categories");
+    for (const c of categories) {
+      lines.push(
+        `- [${c.name}](${SITE_URL}/categories/${c.slug})${c.description ? `: ${c.description}` : ""}`,
+      );
+    }
+  }
+
+  if (collections.length > 0) {
+    lines.push("");
+    lines.push("## Collections");
+    for (const c of collections) {
+      lines.push(
+        `- [${c.name}](${SITE_URL}/collections/${c.slug})${c.description ? `: ${c.description}` : ""}`,
+      );
+    }
+  }
+
+  const physicalProducts = products.filter((p) => p.type === "product");
+  const services = products.filter((p) => p.type === "service");
+
+  if (physicalProducts.length > 0) {
+    lines.push("");
+    lines.push("## Products");
+    for (const p of physicalProducts) {
+      const slug = p.slug ?? p.id;
+      const price = `${brand.currency} ${p.default_price}`;
+      const desc = p.description ? ` — ${p.description.replace(/\s+/g, " ").slice(0, 200)}` : "";
+      lines.push(`- [${p.name}](${SITE_URL}/products?product=${slug}) (${price})${desc}`);
+    }
+  }
+
+  if (services.length > 0) {
+    lines.push("");
+    lines.push("## Services");
+    for (const p of services) {
+      const price = `${brand.currency} ${p.default_price}`;
+      const duration = p.duration_minutes ? `, ${p.duration_minutes} min` : "";
+      lines.push(`- [${p.name}](${SITE_URL}/services) (${price}${duration})`);
+    }
+  }
+
+  lines.push("");
+  lines.push("## Information");
+  lines.push(`- [About](${SITE_URL}/about)`);
+  lines.push(`- [FAQ](${SITE_URL}/faq)`);
+  lines.push(`- [Terms of Service](${SITE_URL}/terms)`);
+  lines.push(`- [Privacy Policy](${SITE_URL}/privacy)`);
+  lines.push(`- [Sitemap (XML)](${SITE_URL}/sitemap.xml)`);
+  lines.push("");
+  lines.push("## Contact");
+  lines.push(`- Email: ${brand.contact.email}`);
+  lines.push(`- Phone: ${brand.contact.phone}`);
+  lines.push(`- Address: ${brand.contact.address}`);
+
+  return lines.join("\n") + "\n";
+}
+
+/**
+ * `/llms.txt` — machine-readable site index for LLMs (per llmstxt.org).
+ * Lets coding agents and chat assistants find products, categories, and
+ * support pages without scraping HTML. Plain Markdown so it streams cheaply
+ * into context windows.
+ */
+export async function GET(): Promise<Response> {
+  const body = await buildLlmsTxt(await getSiteUrl());
+  return new Response(body, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400",
+    },
+  });
+}

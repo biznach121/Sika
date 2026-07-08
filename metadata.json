@@ -1,0 +1,13 @@
+{
+  "id": "services",
+  "name": "Services",
+  "tagline": "Bookable-services storefront with calendar slots and staff profiles.",
+  "industry": "services",
+  "tags": ["services", "bookings", "appointments"],
+  "stability": "stable",
+  "schemaType": "BeautySalon",
+  "mock": {
+    "seedName": "services",
+    "seedBusinessId": "bus_serene_spa"
+  }
+}

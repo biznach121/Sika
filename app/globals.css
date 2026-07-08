@@ -1,0 +1,953 @@
+@import "tailwindcss";
+
+@source "../node_modules/@cimplify/sdk/dist";
+
+/* The SpaBox — calm sand + sage palette, soft contrast.
+   Tweak primary to retheme everything. */
+@theme {
+  --color-background: oklch(0.98 0.012 133.6);
+  --color-foreground: oklch(0.22 0.02 183.6);
+  --color-card: oklch(1 0 0);
+  --color-card-foreground: oklch(0.22 0.02 183.6);
+  --color-popover: oklch(1 0 0);
+  --color-popover-foreground: oklch(0.22 0.02 183.6);
+  --color-primary: oklch(0.46 0.06 193.6);
+  --color-primary-foreground: oklch(0.99 0.01 133.6);
+  --color-secondary: oklch(0.93 0.025 133.6);
+  --color-secondary-foreground: oklch(0.3 0.04 183.6);
+  --color-muted: oklch(0.95 0.018 133.6);
+  --color-muted-foreground: oklch(0.5 0.02 183.6);
+  --color-accent: oklch(0.9 0.035 133.6);
+  --color-accent-foreground: oklch(0.3 0.04 183.6);
+  --color-destructive: oklch(0.58 0.24 27);
+  --color-destructive-foreground: oklch(0.99 0 0);
+  --color-border: oklch(0.91 0.018 133.6);
+  --color-input: oklch(0.93 0.018 133.6);
+  --color-ring: oklch(0.46 0.06 193.6);
+  --radius: 1rem;
+}
+
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--color-background);
+    color: var(--color-foreground);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  a { color: inherit; text-decoration: none; }
+  h1, h2, h3, h4 {
+    font-family: var(--font-serif);
+    letter-spacing: -0.015em;
+    font-weight: 500;
+  }
+}
+
+/* Home page: hide the sticky site header so only the hero's own transparent
+   nav shows. UNLAYERED + !important on purpose — the header carries Tailwind
+   `flex`/`sticky` utilities, and in Tailwind v4 the utilities layer always
+   beats @layer components regardless of specificity, so a layered `display:
+   none` loses the cascade and the header leaks onto the homepage. (It reaches
+   the DOM because usePathname() returns null during static prerender, so the
+   JS guard doesn't fire at build time — this CSS is the real safety net.) */
+body:has(.spa-video-hero) [data-site-header] {
+  display: none !important;
+}
+
+@layer components {
+  body:has(.spa-video-hero) main {
+    background: #e0e9da;
+  }
+
+  .hero-video-layer {
+    opacity: 0;
+    animation: hero-video-cycle 16s linear var(--hero-video-delay) infinite both;
+  }
+
+  .hero-video-layer.is-single {
+    opacity: 1;
+    animation: none;
+  }
+
+  @keyframes hero-video-cycle {
+    0%, 43% {
+      opacity: 1;
+    }
+    50%, 93% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .line-clamp-spabox {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+  }
+
+  .spabox-page {
+    min-height: calc(100svh - 120px);
+    /* Page colour lives on `main` (see the contour-backdrop block at the end
+       of this file) so the animated backdrop can sit between them. */
+    color: #422900;
+  }
+
+  .spabox-shell {
+    margin: 0 auto;
+    max-width: 1180px;
+    padding: 64px 24px 88px;
+  }
+
+  .spabox-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: 36px;
+    background: #c9d9c0;
+    padding: 42px 28px;
+    box-shadow: 0 24px 72px rgba(66, 41, 0, 0.08);
+  }
+
+  .spabox-hero::after {
+    content: "";
+    position: absolute;
+    right: -120px;
+    top: -180px;
+    width: 420px;
+    height: 420px;
+    border: 1px solid rgba(66, 41, 0, 0.14);
+    border-radius: 999px;
+    pointer-events: none;
+  }
+
+  .spabox-eyebrow {
+    margin: 0 0 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #688255;
+  }
+
+  .spabox-title {
+    margin: 0;
+    max-width: 820px;
+    font-family: var(--font-serif);
+    font-size: clamp(3rem, 8vw, 6.6rem);
+    font-weight: 300;
+    line-height: 0.86;
+    color: #422900;
+  }
+
+  .spabox-lede {
+    margin: 24px 0 0;
+    max-width: 680px;
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1.45;
+    color: rgba(78, 56, 9, 0.82);
+  }
+
+  .spabox-card {
+    border: 1px solid rgba(66, 41, 0, 0.1);
+    border-radius: 28px;
+    background: rgba(235, 244, 229, 0.64);
+    box-shadow: 0 18px 54px rgba(66, 41, 0, 0.06);
+  }
+
+  .spabox-link-button {
+    display: inline-flex;
+    min-height: 56px;
+    align-items: center;
+    justify-content: center;
+    background: #422900;
+    padding: 0 28px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #ebf4e5;
+    transition: transform 180ms ease, background-color 180ms ease;
+  }
+
+  .spabox-link-button:hover {
+    transform: translateY(-1px) scale(1.02);
+    background: #301e00;
+  }
+
+  .spabox-product-modal [data-cimplify-customizer-actions] {
+    border-color: rgba(66, 41, 0, 0.12);
+  }
+
+  .spabox-product-modal [data-cimplify-customizer-actions] > div {
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .spabox-product-modal [data-cimplify-customizer-submit] {
+    min-height: 56px;
+    border-radius: 999px;
+    background: #422900 !important;
+    color: #ebf4e5 !important;
+    font-weight: 800;
+    box-shadow: 0 16px 38px rgba(66, 41, 0, 0.2);
+  }
+
+  .spabox-product-modal [data-cimplify-customizer-submit]:hover:not(:disabled) {
+    background: #301e00 !important;
+  }
+
+  .spabox-product-modal [data-cimplify-quantity] {
+    min-height: 56px;
+    border-radius: 999px;
+    border: 1px solid rgba(66, 41, 0, 0.16);
+    background: rgba(245, 254, 235, 0.82);
+  }
+
+  .spabox-product-modal [data-cimplify-customizer-textarea] {
+    border-color: rgba(66, 41, 0, 0.14);
+    border-radius: 18px;
+    background: rgba(245, 254, 235, 0.78);
+  }
+
+  @media (min-width: 640px) {
+    .spabox-shell {
+      padding-left: 32px;
+      padding-right: 32px;
+    }
+
+    .spabox-hero {
+      padding: 56px 52px;
+    }
+  }
+
+  @media (max-width: 639px) {
+    [data-site-header] {
+      padding: 10px 16px;
+    }
+
+    [data-site-header] > a {
+      min-width: 0;
+    }
+
+    [data-site-header] > a span {
+      width: 138px !important;
+    }
+
+    [data-site-header] > div {
+      gap: 10px;
+    }
+
+    .spabox-shell {
+      padding: 36px 16px 64px;
+    }
+
+    .spabox-hero {
+      border-radius: 24px;
+      padding: 32px 20px;
+    }
+
+    .spabox-title {
+      font-size: clamp(2.5rem, 15vw, 4.2rem);
+      line-height: 0.9;
+    }
+
+    .spabox-lede {
+      margin-top: 18px;
+      font-size: 15px;
+    }
+
+    .spabox-card {
+      border-radius: 22px;
+    }
+
+  }
+
+  .service-highlight {
+    animation: service-highlight-rise 0.8s ease-out both;
+  }
+
+  .service-highlight-frame {
+    box-shadow: 0 20px 54px rgba(66, 41, 0, 0.16);
+  }
+
+  .service-highlight-frame::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: conic-gradient(
+      from 0deg,
+      #feda75,
+      #fa7e1e,
+      #d62976,
+      #962fbf,
+      #4f5bd5,
+      #feda75
+    );
+    animation: service-ring-spin 5.5s linear infinite;
+  }
+
+  .service-highlight-frame::after {
+    content: "";
+    position: absolute;
+    inset: 5px;
+    border-radius: inherit;
+    border: 2px solid rgba(255, 255, 255, 0.82);
+    pointer-events: none;
+    z-index: 20;
+  }
+
+  .service-highlight:nth-child(2) {
+    animation-delay: 0.08s;
+  }
+
+  .service-highlight:nth-child(3) {
+    animation-delay: 0.16s;
+  }
+
+  .service-highlight:nth-child(4) {
+    animation-delay: 0.24s;
+  }
+
+  .service-highlight:nth-child(5) {
+    animation-delay: 0.32s;
+  }
+
+  .service-highlight:nth-child(6) {
+    animation-delay: 0.4s;
+  }
+
+  .service-highlight:nth-child(7) {
+    animation-delay: 0.48s;
+  }
+
+  .service-highlight:nth-child(8) {
+    animation-delay: 0.56s;
+  }
+
+  @keyframes service-highlight-rise {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 18px, 0) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+  }
+
+  @keyframes service-ring-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .service-highlight,
+    .service-highlight-frame::before {
+      animation: none;
+    }
+  }
+
+  .hero-type-line {
+    display: inline-block;
+    max-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 0.045em solid currentColor;
+    animation:
+      hero-typewriter var(--type-duration) steps(var(--type-steps), end) var(--type-delay) both,
+      hero-type-caret var(--type-duration) linear var(--type-delay) both;
+  }
+
+  .hero-script-line {
+    animation: hero-script-reveal 1.8s 3.15s ease-out both;
+    clip-path: inset(0 100% 0 0);
+  }
+
+  @keyframes hero-typewriter {
+    from {
+      max-width: 0;
+    }
+    to {
+      max-width: var(--type-width);
+    }
+  }
+
+  @keyframes hero-type-caret {
+    0%, 98% {
+      border-color: currentColor;
+    }
+    100% {
+      border-color: transparent;
+    }
+  }
+
+  @keyframes hero-script-reveal {
+    from {
+      clip-path: inset(0 100% 0 0);
+      opacity: 0.72;
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-type-line {
+      max-width: none;
+      border-right: 0;
+      animation: none;
+    }
+
+    .hero-script-line {
+      animation: none;
+      clip-path: none;
+    }
+  }
+
+  .wellness-float-frame,
+  .wellness-note {
+    opacity: 0;
+  }
+
+  .wellness-float-frame,
+  .wellness-float-image,
+  .wellness-note,
+  .wellness-reveal,
+  .wellness-pillar-title,
+  .wellness-pillar-body,
+  .wellness-pillar-bullet {
+    will-change: opacity, transform;
+  }
+
+  .wellness-float-image {
+    transform: translate3d(0, 52px, 0) scale(1.05);
+  }
+
+  .wellness-note {
+    transform: translate3d(0, 18px, 0);
+  }
+
+  .wellness-manifesto.is-visible .wellness-float-frame {
+    animation: wellness-frame-fade 0.85s ease-out both;
+  }
+
+  .wellness-manifesto.is-visible .wellness-float-image {
+    animation: wellness-image-glide 1.05s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .wellness-manifesto.is-visible .wellness-float-frame:nth-of-type(1),
+  .wellness-manifesto.is-visible .wellness-float-frame:nth-of-type(1) .wellness-float-image {
+    animation-delay: 0.2s;
+  }
+
+  .wellness-manifesto.is-visible .wellness-float-frame:nth-of-type(2),
+  .wellness-manifesto.is-visible .wellness-float-frame:nth-of-type(2) .wellness-float-image {
+    animation-delay: 0.34s;
+  }
+
+  .wellness-manifesto.is-visible .wellness-float-frame:nth-of-type(3),
+  .wellness-manifesto.is-visible .wellness-float-frame:nth-of-type(3) .wellness-float-image {
+    animation-delay: 0.48s;
+  }
+
+  .wellness-manifesto.is-visible .wellness-float-frame:nth-of-type(4),
+  .wellness-manifesto.is-visible .wellness-float-frame:nth-of-type(4) .wellness-float-image {
+    animation-delay: 0.62s;
+  }
+
+  .wellness-manifesto.is-visible .wellness-note {
+    animation: wellness-note-rise 0.75s ease-out both;
+    animation-delay: 0.78s;
+  }
+
+  .wellness-reveal {
+    opacity: 0;
+    transform: translate3d(0, 34px, 0);
+  }
+
+  .wellness-basis-title {
+    transform: translate3d(0, 44px, 0) scale(0.98);
+  }
+
+  .wellness-pillar-title,
+  .wellness-pillar-body,
+  .wellness-pillar-bullet {
+    opacity: 0;
+    transform: translate3d(0, 22px, 0);
+  }
+
+  .wellness-reveal.is-visible {
+    animation: wellness-text-rise 0.95s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .wellness-reveal.is-visible .wellness-pillar-title {
+    animation: wellness-title-drift 0.95s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
+  }
+
+  .wellness-reveal.is-visible .wellness-pillar-body {
+    animation: wellness-note-rise 0.82s ease-out 0.22s both;
+  }
+
+  .wellness-reveal.is-visible .wellness-pillar-bullet {
+    animation: wellness-bullet-slide 0.68s ease-out var(--bullet-delay) both;
+  }
+
+  .wellness-reveal.is-visible .wellness-pillar-bullet svg {
+    animation: wellness-bullet-mark 0.75s ease-out var(--bullet-delay) both;
+    transform-origin: left center;
+  }
+
+  @keyframes wellness-line-draw {
+    0% {
+      opacity: 0;
+      stroke-dashoffset: 1;
+    }
+    8% {
+      opacity: 1;
+      stroke-dashoffset: 1;
+    }
+    58% {
+      opacity: 1;
+      stroke-dashoffset: 0;
+    }
+    82% {
+      opacity: 1;
+      stroke-dashoffset: 0;
+    }
+    96% {
+      opacity: 0;
+      stroke-dashoffset: 0;
+    }
+    100% {
+      opacity: 0;
+      stroke-dashoffset: 1;
+    }
+  }
+
+  @keyframes wellness-frame-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes wellness-image-glide {
+    from {
+      transform: translate3d(0, 52px, 0) scale(1.05);
+    }
+    to {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+  }
+
+  @keyframes wellness-note-rise {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 18px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @keyframes wellness-text-rise {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 34px, 0) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+  }
+
+  @keyframes wellness-title-drift {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 26px, 0);
+      filter: blur(5px);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+      filter: blur(0);
+    }
+  }
+
+  @keyframes wellness-bullet-slide {
+    from {
+      opacity: 0;
+      transform: translate3d(-14px, 12px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @keyframes wellness-bullet-mark {
+    from {
+      opacity: 0;
+      transform: scaleX(0.2);
+    }
+    to {
+      opacity: 1;
+      transform: scaleX(1);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wellness-float-frame,
+    .wellness-float-image,
+    .wellness-note,
+    .wellness-reveal,
+    .wellness-pillar-title,
+    .wellness-pillar-body,
+    .wellness-pillar-bullet,
+    .wellness-pillar-bullet svg {
+      opacity: 1;
+      transform: none;
+      filter: none;
+      animation: none !important;
+    }
+  }
+
+  .footer-lines path {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: footer-line-draw 10.5s cubic-bezier(0.58, 0, 0.18, 1) infinite both;
+  }
+
+  .footer-lines path:nth-child(2) {
+    animation-delay: 1.8s;
+  }
+
+  .footer-contact-line {
+    animation: footer-contact-rise 0.85s ease-out both;
+  }
+
+  .footer-contact-line:nth-child(2) {
+    animation-delay: 0.12s;
+  }
+
+  .footer-contact-line:nth-child(3) {
+    animation-delay: 0.24s;
+  }
+
+  .footer-contact-line:nth-child(4) {
+    animation-delay: 0.36s;
+  }
+
+  @keyframes footer-line-draw {
+    0% {
+      opacity: 0;
+      stroke-dashoffset: 1;
+    }
+    10% {
+      opacity: 1;
+      stroke-dashoffset: 1;
+    }
+    62% {
+      opacity: 1;
+      stroke-dashoffset: 0;
+    }
+    84% {
+      opacity: 1;
+      stroke-dashoffset: 0;
+    }
+    96% {
+      opacity: 0;
+      stroke-dashoffset: 0;
+    }
+    100% {
+      opacity: 0;
+      stroke-dashoffset: 1;
+    }
+  }
+
+  @keyframes footer-contact-rise {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 18px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .footer-lines path,
+    .footer-contact-line {
+      opacity: 1;
+      stroke-dashoffset: 0;
+      transform: none;
+      animation: none !important;
+    }
+  }
+
+  .product-carousel-track {
+    will-change: opacity, transform;
+  }
+
+  .product-carousel-track-next {
+    animation: product-carousel-next 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .product-carousel-track-previous {
+    animation: product-carousel-previous 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes product-carousel-next {
+    from {
+      opacity: 0;
+      transform: translate3d(56px, 0, 0) scale(0.985);
+      filter: blur(5px);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+      filter: blur(0);
+    }
+  }
+
+  @keyframes product-carousel-previous {
+    from {
+      opacity: 0;
+      transform: translate3d(-56px, 0, 0) scale(0.985);
+      filter: blur(5px);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+      filter: blur(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .product-carousel-track {
+      opacity: 1;
+      transform: none;
+      filter: none;
+      animation: none !important;
+    }
+  }
+}
+
+/* ── Booking widget (SDK <DateSlotPicker>/<SlotPicker>) ──────────────────────
+   Styled via the SDK's stable data-cimplify-* attributes so it applies
+   everywhere the widget renders (product modal + /book). Deliberately
+   UNLAYERED: these must win over the SDK's own utility classes. */
+
+[data-cimplify-date-slot-picker] {
+  gap: 1.1rem;
+}
+
+[data-cimplify-date-nav-prev],
+[data-cimplify-date-nav-next] {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(66, 41, 0, 0.14);
+  background: #ebf4e5;
+  color: #422900;
+}
+
+[data-cimplify-date-nav-prev]:hover:not(:disabled),
+[data-cimplify-date-nav-next]:hover:not(:disabled) {
+  background: #c9d9c0;
+  color: #422900;
+}
+
+[data-cimplify-date-strip] {
+  gap: 0.5rem;
+  /* 5 visible days (7 was too cramped, especially on mobile). The SDK's
+     built-in picker in the product modal is hardcoded to 7 days and takes no
+     prop, so the last two chips are hidden; /book passes daysToShow={5}. */
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+[data-cimplify-date-button]:nth-child(n + 6) {
+  display: none;
+}
+
+[data-cimplify-date-button] {
+  min-height: 3.75rem;
+  border-radius: 1.1rem;
+  border: 1px solid rgba(66, 41, 0, 0.12);
+  background: rgba(235, 244, 229, 0.72);
+  padding: 0.6rem 0.3rem;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #422900;
+  transition: border-color 0.15s ease, background-color 0.15s ease,
+    color 0.15s ease, box-shadow 0.15s ease;
+}
+
+[data-cimplify-date-button]:hover {
+  border-color: rgba(66, 41, 0, 0.4);
+  background: #ebf4e5;
+}
+
+[data-cimplify-date-button][data-selected] {
+  border-color: #422900;
+  background: #422900;
+  color: #ebf4e5;
+  box-shadow: 0 12px 26px rgba(66, 41, 0, 0.22);
+}
+
+[data-cimplify-date-button][data-fully-booked] {
+  opacity: 0.35;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+[data-cimplify-slot-group-label] {
+  color: #688255;
+}
+
+[data-cimplify-slot] {
+  border-radius: 9999px;
+  border: 1px solid rgba(66, 41, 0, 0.14);
+  background: #ebf4e5;
+  color: #422900;
+  font-weight: 600;
+  padding: 0.55rem 0.6rem;
+  transition: border-color 0.15s ease, background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+[data-cimplify-slot]:hover:not([data-unavailable]) {
+  border-color: rgba(66, 41, 0, 0.4);
+}
+
+[data-cimplify-slot][data-selected] {
+  border-color: #422900;
+  background: #422900;
+  color: #ebf4e5;
+}
+
+[data-cimplify-slot][data-unavailable] {
+  opacity: 0.35;
+  text-decoration: line-through;
+}
+
+/* Body scroll lock for the storefront's own overlays (product modal, filter
+   drawer) — see components/use-body-scroll-lock.ts for why this is an
+   attribute instead of an inline style. */
+body[data-scroll-locked] {
+  overflow: hidden;
+}
+
+/* ── Animated contour backdrop (components/contour-backdrop.tsx) ─────────────
+   `main` carries the page colour and isolates a stacking context so the
+   fixed backdrop (z -1) paints above the background but under all content. */
+
+main {
+  position: relative;
+  isolation: isolate;
+  background: #e0e9da;
+}
+
+/* Vines (page backdrop + home sections): each stem draws in once (duration/
+   delay inline per stem, matched to its length); leaves and petals pop from
+   scale 0 as the draw passes them, then the sprout sways gently forever.
+   Nothing un-draws — the growth is the show, the grown vine is the texture. */
+.vine-stem {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: vine-draw linear forwards;
+}
+
+@keyframes vine-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.vine-leaf,
+.vine-petal,
+.vine-bud {
+  transform: scale(0);
+  transform-origin: 0 0;
+  animation: vine-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes vine-pop {
+  to {
+    transform: scale(1);
+  }
+}
+
+.vine-sway {
+  transform-origin: 0 0;
+  animation: vine-sway 6.5s ease-in-out infinite alternate;
+}
+
+@keyframes vine-sway {
+  from {
+    transform: rotate(-2.2deg);
+  }
+  to {
+    transform: rotate(2.2deg);
+  }
+}
+
+/* Home-section vines wait for their section to scroll into view: animations
+   start paused and resume when the section's IntersectionObserver adds
+   .is-visible (same mechanism the wellness reveals use). */
+.vine-gated .vine-stem,
+.vine-gated .vine-leaf,
+.vine-gated .vine-petal,
+.vine-gated .vine-bud,
+.vine-gated .vine-sway {
+  animation-play-state: paused;
+}
+
+.is-visible .vine-gated .vine-stem,
+.is-visible .vine-gated .vine-leaf,
+.is-visible .vine-gated .vine-petal,
+.is-visible .vine-gated .vine-bud,
+.is-visible .vine-gated .vine-sway {
+  animation-play-state: running;
+}
+
+/* The home page draws its own lines in its sections — skip the backdrop. */
+body:has(.spa-video-hero) .contour-backdrop {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vine-stem,
+  .vine-leaf,
+  .vine-petal,
+  .vine-bud,
+  .vine-sway {
+    animation: none;
+  }
+  .vine-stem {
+    stroke-dashoffset: 0;
+  }
+  .vine-leaf,
+  .vine-petal,
+  .vine-bud {
+    transform: scale(1);
+  }
+}
